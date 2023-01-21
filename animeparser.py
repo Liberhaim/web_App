@@ -20,6 +20,27 @@ HEADERS = {
 }
 content = {}
 
+def setNextDate(tag1, tag2):
+    if tag1[0].text.strip() == "Следующий эпизод":
+        next_episod = tag1[0].text.strip().split(' ')
+        try:
+            datestring = next_episod[0] + next_episod[1][:-1] + next_episod[2] + next_episod[4].strip()
+            next_date = datetime.strptime(datestring, '%d%b%Y%H:%M')
+        except:
+            next_date = "дата не корректна"
+        finally:
+            return next_date
+    else:
+        print(tag2[2].text)
+
+def parsingDate(str):
+    try:
+        datestring = str[0] + str[1][:-1] + str[2] + str[4].strip()
+        next_date = datetime.strptime(datestring, '%d%b%Y%H:%M')
+    except:
+        next_date = "дата не корректна"
+    finally:
+        return next_date
 
 def parser(link_url, headers=HEADERS):
 
@@ -58,18 +79,16 @@ def parser(link_url, headers=HEADERS):
     locale.setlocale(locale.LC_ALL, ("ru-RU", 'UTF-8'))
     # Дата следующего эпизода
     next_date = ""
-    is_serial_exit = False
+
     tag_dd = soups.find("div", class_="anime-info").find_all("dd")
-    print(tag_dd[2].text)
-    if tag_dd[2].text != "Вышел":
+    tag_dt = soups.find("div", class_="anime-info").find_all("dt")
+
+    # setNextDate()
+    if tag_dt[0].text.strip() == "Следующий эпизод":
         next_episod = tag_dd[0].text.strip().split(' ')
-        print(next_episod)
-        try:
-            datestring = next_episod[0] + '-' + next_episod[1][:-1] + '-' + next_episod[2]
-            next_date = datetime.strptime(datestring, '%d-%b-%Y').date()
-            print(next_date)
-        except:
-            next_date = "data not correct"
+        print(parsingDate(next_episod))
+    else:
+        print(tag_dd[2].text)
 
 
     # разбор таблицы с тегом "anime-info"
@@ -131,6 +150,6 @@ if __name__ == "__main__":
 
     count_anime = len(listanime)
 
-    for i in range(0, 4, 1):
+    for i in range(0, 3, 1):
         content = parser(listanime[i].strip())
 
