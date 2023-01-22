@@ -22,18 +22,18 @@ content = {}
 
 
 def setnextdate(tag1, tag2):
+    next_date = str
     if tag1[0].text.strip() == "Следующий эпизод":
         next_episod = tag2[0].text.strip().split(' ')
         try:
-            next_date = ""
             datestring = next_episod[0] + next_episod[1][:-1] + next_episod[2] + next_episod[4].strip()
             next_date = datetime.strptime(datestring, '%d%b%Y%H:%M')
         except:
             next_date = "дата не корректна"
         finally:
-            return print(next_date)
+            return next_date
     else:
-        print(tag2[2].text)
+        return tag2[2].text
 
 
 def parser(link_url, headers=HEADERS):
@@ -44,7 +44,7 @@ def parser(link_url, headers=HEADERS):
     soups = BeautifulSoup(src, 'lxml')
 
     # Получение имени на проект
-    anime_title = soups.find("h1").text
+    title = soups.find("h1").text
     # print(f"\nНазвание аниме: {anime_title}")
 
     # Получение нормальной ссылк ина картинку
@@ -54,63 +54,41 @@ def parser(link_url, headers=HEADERS):
     # print(f"\nСсылка на картинку: {link_src_img}\n")
 
     # Получение рейтинга
-    anime_rating = soups.find('span', class_="rating-value").text.replace(',', '.')
+    rating = soups.find('span', class_="rating-value").text.replace(',', '.')
 
-    # print(f"Рейтинг: {anime_rating}/10")
-
-    # # Дата следующего эпизода
-    # next_episod = ""
-    # is_serial_exit = False
-    # _ = soups.find("div", class_="anime-info").find("dd", class_="col-12")
-    # _ = _.text.strip().split('\n')
-    # if _[0] != "":
-    #     next_episod = _[1].strip() + ", " + _[0].strip()
-    # else:
-    #     is_serial_exit = True
-    #     is_serial_exit = "Вышел"
-    #     # print("empty str")
 
     locale.setlocale(locale.LC_ALL, ("ru-RU", 'UTF-8'))
     # Дата следующего эпизода
-    next_date = ""
 
     tag_dd = soups.find("div", class_="anime-info").find_all("dd")
     tag_dt = soups.find("div", class_="anime-info").find_all("dt")
 
     # Получить инфу "дату выхода серии" / информ. о том что серия "вышла", иначе "дата не корректна"
-    setnextdate(tag_dt, tag_dd)
+    date_next_ongoing = setnextdate(tag_dt, tag_dd)
 
-    # разбор таблицы с тегом "anime-info"
+    # разбор таблицы с тегом "dd" класса "anime-info"
+    index = 0
     aa = []
-    date_next_ongoing = soups.find("div", class_="anime-info").find_all("dd", class_="col-6")
-    for item in date_next_ongoing:
+    table_dd = soups.find("div", class_="anime-info").find_all("dd", class_="col-6")
+    for item in table_dd:
         items = item.text.strip()
-        if items.find(",") > 0:
-            aa.append(re.sub(r'\W+', ", ", items))
+        if items.find(",") > 0 and index < 12:
+            aa.append(" ".join(items.split()))
+        elif items.find('\n') > 0 and index >= 12:
+            tempstr = re.sub(r'\s+', ' ', items)
+            aa.append(re.sub(pattern=r'\)', repl="), ", string=tempstr)[:-2])
+            # aa.append(tempstr.replace(")", "), ")[:-1])
         else:
             aa.append(items)
-    # aa = []
-    # for item in date_next_ongoing:
-    #     items = item.text.strip()
-    #     if items.find(",") >= 1:
-    #         s = ''.join(items.split())
-    #         aa.append(s)
-    #     else:
-    #         aa.append(items)
-
-    # date_next_ongoing = _.get("data-title") + ' (' + _.text.strip() + ')'
-
-    # print(f'Следующий эпизод: {data_next_ongoing.get("data-title")} ({data_next_ongoing.text.strip()})')
-    anime_duber_list = aa[11]
+        index += 1
+    status = aa[2]
+    number_episodes = aa[1]
+    if status == 'Онгоинг':
+        duber_list = aa[11]
+    else:
+        duber_list = aa[12]
     genre = aa[3]
 
-    # удаление ненужных символов из строки и создание списка с озвучкой дабберов
-    del_symbol = ["'", " "]
-    for item in del_symbol:
-        if item in anime_duber_list:
-            anime_duber_list = anime_duber_list.replace(item, "")
-
-    # print(f"В озвучке: {anime_duber_list}")
 
 # скачать картинку
 # def downad_pic()
@@ -120,13 +98,14 @@ def parser(link_url, headers=HEADERS):
 #     out.close()
 
     content = {
-        "anime_title": anime_title,
+        "title": title,
         "link_src_img": link_src_img,
-        "anime_rating": anime_rating,
+        "rating": rating,
         "date_next_ongoing": date_next_ongoing,
-        "next_date" : next_date,
-        'anime_duber_list': anime_duber_list,
-        "genre": genre
+        'duber_list': duber_list,
+        "genre": genre,
+        "status": status,
+        "number_episodes": number_episodes
     }
 
     return content
@@ -134,7 +113,7 @@ def parser(link_url, headers=HEADERS):
 
 if __name__ == "__main__":
     # открыть текстовый файл с именами аниме, иная создать его
-    with open('url_list_anime.txt', 'r') as ListAnime:
+    with open('url_list_anime.txt', 'r', encoding="utf-8") as ListAnime:
         listanime = ListAnime.readlines()
 
     count_anime = len(listanime)
