@@ -20,27 +20,21 @@ HEADERS = {
 }
 content = {}
 
-def setNextDate(tag1, tag2):
+
+def setnextdate(tag1, tag2):
     if tag1[0].text.strip() == "Следующий эпизод":
-        next_episod = tag1[0].text.strip().split(' ')
+        next_episod = tag2[0].text.strip().split(' ')
         try:
+            next_date = ""
             datestring = next_episod[0] + next_episod[1][:-1] + next_episod[2] + next_episod[4].strip()
             next_date = datetime.strptime(datestring, '%d%b%Y%H:%M')
         except:
             next_date = "дата не корректна"
         finally:
-            return next_date
+            return print(next_date)
     else:
         print(tag2[2].text)
 
-def parsingDate(str):
-    try:
-        datestring = str[0] + str[1][:-1] + str[2] + str[4].strip()
-        next_date = datetime.strptime(datestring, '%d%b%Y%H:%M')
-    except:
-        next_date = "дата не корректна"
-    finally:
-        return next_date
 
 def parser(link_url, headers=HEADERS):
 
@@ -83,13 +77,8 @@ def parser(link_url, headers=HEADERS):
     tag_dd = soups.find("div", class_="anime-info").find_all("dd")
     tag_dt = soups.find("div", class_="anime-info").find_all("dt")
 
-    # setNextDate()
-    if tag_dt[0].text.strip() == "Следующий эпизод":
-        next_episod = tag_dd[0].text.strip().split(' ')
-        print(parsingDate(next_episod))
-    else:
-        print(tag_dd[2].text)
-
+    # Получить инфу "дату выхода серии" / информ. о том что серия "вышла", иначе "дата не корректна"
+    setnextdate(tag_dt, tag_dd)
 
     # разбор таблицы с тегом "anime-info"
     aa = []
