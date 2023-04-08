@@ -32,6 +32,7 @@ template = Template('''
 </html>
 ''')
 
+
 html = template.render(my_dict=_json)
 print(html)
 
