@@ -6,10 +6,16 @@ install package:
 
 """
 import re
+import time
+
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 import locale
+import json
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.keys import Keys
 
 HEADERS = {
     "Accept"    : "*/*",
@@ -18,12 +24,13 @@ HEADERS = {
 }
 
 
+
 def set_next_date(tag1, tag2):
     next_date = str
     if tag1 == "Следующий эпизод":
-        next_episode = tag2[0].text.strip().split(' ')
+        next_episode = tag2.split(' ')
         try:
-            date_string = next_episode[0] + next_episode[1][:-1] + next_episode[2] + next_episode[4].strip()
+            date_string = next_episode[0] + next_episode[1][0:3] + next_episode[2] + next_episode[4].strip()
             next_date = datetime.strptime(date_string, '%d%b%Y%H:%M')
         except:
             next_date = "дата не корректна"
@@ -31,11 +38,10 @@ def set_next_date(tag1, tag2):
         finally:
             return next_date
     else:
-        return tag2[2].text
+        return tag2.text
 
 
 def parser(link_url, headers=HEADERS):
-
     locale.setlocale(locale.LC_ALL, ("ru-RU", 'UTF-8'))
 
     req = requests.get(link_url, headers)
@@ -54,42 +60,9 @@ def parser(link_url, headers=HEADERS):
     # Получение рейтинга
     rating = soups.find('span', class_="rating-value").text.replace(',', '.')
 
-    tag_dd = soups.find("div", class_="anime-info").find_all("dd")
-    tag_dt = soups.find("div", class_="anime-info").find("dt").text.strip()
-
-    date_next_ongoing_for_tv = []
-
-    # try:
-    #     key_dict_next_episode = soups.find("div", class_="anime-info").find("dt", class_="col-12").text.strip()
-    #     value_dict_next_episode = soups.find("div", class_="anime-info").find("dd", class_="col-12").text.strip()
-    #     next_episode = value_dict_next_episode.split(' ')
-    #     date_string = next_episode[0] + next_episode[1][:-1] + next_episode[2] + next_episode[4].strip()
-    #     next_date = datetime.strptime(date_string, '%d%b%Y%H:%M')
-    #
-    #     print(f"сериал показывают: {title}")
-    #     print(f"дата {key_dict_next_episode}: {next_date}")
-    # except:
-    #     print(f"сериал уже вышел: {title}")
-
-    # day = "4"
-    # mouth = "февр"
-    # year = "2023"
-    # time = "17:30"
-    # date = day + mouth + year + time
-    # next_date = datetime.strptime(date, '%d%b%Y%H:%M')
-    # print(next_date)
-    # date_next_ongoing_for_tv = dict(zip(key_dict_next_episode, value_dict_next_episode))
-
-
-
-    # table_dt = soups.find("div", class_="anime-info").find_all("dt", class_="col-6")
-
-    # Получить информацию "дату выхода серии" / информ. О том что серия "вышла", иначе "дата не корректна"
-    date_next_ongoing_for_tv = set_next_date(tag_dt, tag_dd)
 
     # разбор таблицы класса "anime-info"
     # разбор таблицы с тегом "dt" класса "anime-info"
-
     dt = []
     table_dt = soups.find("div", class_="anime-info").find_all("dt", class_="col-6")
     for item in table_dt:
@@ -116,58 +89,34 @@ def parser(link_url, headers=HEADERS):
         else:
             dd.append(items)
         index += 1
-    status = dd[2]
-    number_episodes = dd[1]
 
 
     # создание словаря класса "anime-info"
     class_anime_info = dict(zip(dt, dd))
 
-    type_anime = dd[0]
-    if class_anime_info['Тип'] == 'ТВ Сериал':
-        print('ok')
+    # Получить информацию "дату выхода серии" / информ. О том что серия "вышла", иначе "дата не корректна"
+    # date_next_ongoing_for_tv = []
+    try:
+        tag_dd = soups.find("div", class_="anime-info").find("dd", class_="col-12").text.strip()
+        tag_dt = soups.find("div", class_="anime-info").find("dt", class_="col-12").text.strip()
+        date_next_ongoing_for_tv = set_next_date(tag_dt, tag_dd).strftime("%H:%m %d/%m/%Y")
+    except:
+        date_next_ongoing_for_tv = 'Тайтл вышел'
 
-    if type_anime == 'OVA':
-        if status == 'Онгоинг':
-            dubber_list = dd[11]
-            age_limit = dd[9]
-            start_data = dd[6]
-        elif status == 'Вышел':
-            dubber_list = dd[10]
-            age_limit = dd[8]
-            start_data = dd[5]
-
-    elif type_anime == 'ТВ Сериал':
-        if status == 'Онгоинг':
-            dubber_list = dd[11]
-            age_limit = dd[9]
-            start_data = dd[6]
-        elif status == 'Вышел':
-            dubber_list = dd[12]
-            age_limit = dd[8]
-            start_data = dd[5]
-
-    genre = dd[3]
-
-# скачать картинку
-# def download_pic()
-#     p = requests.get(link_src_img)
-#     out = open(f"{anime_title}.jpg", "wb")
-#     out.write(p.content)
-#     out.close()
 
     anime_content = {
+        "url": link_url,
         "title": title,
         "link_src_img": link_src_img,
         "rating": rating,
         "date_next_ongoing_for_tv": date_next_ongoing_for_tv,
-        'dubber_list': dubber_list,
-        "genre": genre,
-        "status": status,
-        "number_episodes": number_episodes,
-        "age_limit": age_limit,
-        "type_anime": type_anime,
-        "start_data": start_data
+        'dubber_list': class_anime_info['Озвучка'],
+        "genre": class_anime_info['Жанр'],
+        "status": class_anime_info['Статус'],
+        "number_episodes": class_anime_info['Эпизоды'],
+        "age_limit": class_anime_info['Возрастные ограничения'],
+        "type_anime": class_anime_info['Тип'],
+        "start_data": class_anime_info['Выпуск']
     }
 
     return anime_content
@@ -180,9 +129,27 @@ if __name__ == "__main__":
         list_anime = ListAnime.readlines()
 
     count_anime = len(list_anime)
+    anime_json = dict()
+    start_time = time.time()
 
-    for i in range(0, count_anime-1, 1):
-        content = parser(list_anime[i].strip(), HEADERS)
+    for i in range(0, count_anime - 1, 1):
+        anime_json[i] = parser(list_anime[i].strip(), HEADERS)
 
+    print(f'время потрачено: {time.time() - start_time}')
+    print(anime_json)
 
-# сделать ключ значение ключ тег td занчение тег dd
+    with open("anime_json.json", "w", encoding='utf-8') as file:
+        # file.write(json.dumps(anime_json))
+        json.dump(anime_json, file, indent=2, ensure_ascii=False)
+
+    # path_webdriver = r"C:\project_python\ParserAmimegoOrg\webdriver\chromedriver.exe"
+    #
+    # s = Service(path_webdriver)
+    #
+    # chromeOptions = webdriver.ChromeOptions()
+    # driver = webdriver.Chrome(service=s)
+    # url = "file:///D:/1.html"
+    # driver.get(url)
+    # time.sleep(5)
+    # driver.close()
+    # driver.quit()
