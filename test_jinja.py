@@ -12,7 +12,14 @@ with open(r"C:\project_python\ParserAmimegoOrg\anime_json.json", "r", encoding='
 
 for key, value in _json.items():
     print(key, value['title'])
+
+lists = list(_json.values())
+n = 7
+
 template = Template('''
+{% set number = 0 %}
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -22,24 +29,31 @@ template = Template('''
   <title>Словарь</title>
 </head>
 <body>
-  <h1>Словарь</h1>
-  <ul>
-    {% for key, value in my_dict.items() -%}
-      <li><a href="{{ value.link_src_img }}"> <img src="{{value.link_src_img}}" width="189" height="255" alt="lorem"> {{ value.title }}:   </a> </li>
+  <table>
+    <tr>
+      <th>Заголовок 1 </th>
+      <th>Заголовок 2 </th>
+      <th>Заголовок 3 </th>
+      <th>Заголовок 4 </th>     
+    </tr>
+    {%- for value in range( 0, my_dict | length, 4) -%}
+    <tr>
+            {%- for tex in range( 0, 4, 1 ) -%}
+            {% set number = tex + value -%}
+                {% if my_dict | length > number %}
+                    <td> {{ my_dict[number]['title'] }} </td>
+                {%- endif -%}
+            {% endfor %}
+    </tr>
     {% endfor %}
-  </ul>
+  </table>
 </body>
 </html>
 ''')
 
-
-html = template.render(my_dict=_json)
+# html = template.render(my_dict=_json)
+html = template.render(my_dict=lists, cnt=n)
 print(html)
 
 with open("dsa.html", "w", encoding='utf-8') as d:
     d.write(html)
-
-
-
-
-
