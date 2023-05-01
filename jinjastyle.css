@@ -1,0 +1,13 @@
+.picmarginauto {
+    display: table-cell;
+    height: 300px;
+    text-align: center;
+    vertical-align: middle;
+}
+.textmarginauto {
+    display: table-cell;
+    height: 100px;
+    text-align: center;
+    width: 200px;
+    vertical-align: middle;
+}
