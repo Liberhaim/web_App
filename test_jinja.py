@@ -26,6 +26,7 @@ template = Template('''
 	<meta charset="UTF-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="jinjastyle.css" type="text/css"/>
   <title>Словарь</title>
 </head>
 <body>
@@ -36,16 +37,18 @@ template = Template('''
       <th>Заголовок 3 </th>
       <th>Заголовок 4 </th>     
     </tr>
-    {%- for value in range( 0, my_dict | length, 4) -%}
+    {% for value in range( 0, my_dict | length, 4) %}
     <tr>
-            {%- for tex in range( 0, 4, 1 ) -%}
-            {% set number = tex + value -%}
-                {% if my_dict | length > number %}
-                    <td> {{ my_dict[number]['title'] }} </td>
-                {%- endif -%}
-            {% endfor %}
+        {% for tex in range( 0, 4, 1 ) -%}
+        {% set number = tex + value %}
+            {%- if my_dict | length > number -%}
+                <td> <img class="picmarginauto" src=" {{ my_dict[number]['link_src_img'] }}">
+                <div class="textmarginauto"> {{ my_dict[number]['title'] }} </div>
+                </td>
+            {% endif %}
+        {%- endfor -%}
     </tr>
-    {% endfor %}
+    {%- endfor -%}
   </table>
 </body>
 </html>
